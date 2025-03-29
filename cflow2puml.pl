@@ -118,7 +118,7 @@ Options:
         Show the version of the script and exit.
 _END_OF_HELP_
 
-my $VERSION = '0.1.0';
+my $VERSION = '0.2.0-SNAPSHOT';
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 =head1 SUBROUTINES FOR HELP AND VERSION
