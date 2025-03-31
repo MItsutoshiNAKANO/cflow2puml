@@ -15,42 +15,29 @@ cflow2puml.pl - Convert cflow output to PlantUML format
 
 # DESCRIPTION
 
-This script reads the output of the cflow command and converts it to
-PlantUML format. The cflow command generates a call graph of C
-functions, which this script processes to create a UML class diagram.
-The script expects the cflow output.
-The cflow output should be in the format:
+This script converts the output of cflow (a tool for generating
+call graphs from C source code) to PlantUML format.
 
-    <indent>function() <return_type> function_name (arg1, arg2, ...) at file:line_number>
-    <indent>function() <return_type> function_name (arg1, arg2, ...) at file:line_number>...
+It reads the cflow output from the specified input file or standard
+input and generates a PlantUML class diagram.
+The output is written to standard output in the PlantUML format.
 
-The script will read the cflow output from the specified file(s) or
-from standard input if no file is specified.
+The script uses the Getopt::Std module for command-line option
+parsing and the utf8 module for handling UTF-8 encoding.
+The script is designed to be used with Perl 5.38 or later.
 
-The script will generate a PlantUML class diagram with the functions
-as classes and the function calls as relationships between them.
-
-The script will output the PlantUML class diagram to standard output.
-The script uses the following format for the PlantUML class diagram:
-
-    @startuml
-
-    class function_name <<file:line_number>> {
-      arg1
-      arg2
-      ...
-    }
-
-    function_name --> function_name
-    ...
-
-    @enduml
-
-The script will also print the relationships between the functions in
-the format:
-
-    function_name --> function_name
-    ...
+The script reads the cflow output line by line and parses it to
+extract the function names, return types, arguments, file names,
+line numbers, and the rest of the line.
+The function names are stored in a hash with the function name as the
+key and a hash reference as the value.
+The relationships between the functions are stored in an array of
+hash references, each containing the parent and child function names.
+The relationships are stored in the order they appear in the cflow
+output.
+The script generates a PlantUML class diagram using the
+function names, return types, arguments, file names, line numbers,
+and the relationships between the functions.
 
 # OPTIONS
 
@@ -74,6 +61,8 @@ This command will read the cflow output from the file output.cflow
 and write the PlantUML class diagram to the file output.puml.
 The output will be in the PlantUML format, which can be used to
 generate a UML class diagram.
+The output can be viewed using the PlantUML tool or any other
+compatible tool.
 
 # CONSTANTS
 
@@ -178,150 +167,159 @@ containing the following keys:
 The relationships are stored in the order they appear in the cflow
 output.
 
-# SUBROUTINES FOR PRINTING PLANTUML
+# SUBROUTINES FOR MAKE OUTPUT FOR PLANTUML
 
-The following subroutines are used to print the functions and
-classes in the PlantUML format.
-The functions are printed only if they have not been printed
-before. The functions are printed in the order of their
-relationships. The classes are printed in the following format:
+The following subroutines are used to generate the PlantUML output
+from the cflow output.
+The subroutine make\_func generates the PlantUML class definition
+for a function.
 
-    class function_name <<file:line_number>> {
-      arg1
-      arg2
-      ...
+## make\_func
+
+    my @out = make_func($name, $funcs);
+
+Generates the PlantUML class definition for a function.
+The function name is passed as the first argument and the hash of
+functions is passed as the second argument.
+The function returns an array of strings containing the PlantUML
+class definition.
+The class definition includes the function name, return type,
+arguments, file name, line number, and the rest of the line.
+The class definition is formatted according to the PlantUML
+specification.
+The function name is used as the class name and the return type
+is used as the class stereotype.
+The arguments are included in the class definition as attributes.
+The file name and line number are included in the class definition
+as notes.
+The class definition is formatted as follows:
+
+    class FUNCTION_NAME <<source_file_name:line_number>> {
+        ARGUMENTS
+        ...
+        ---
     }
 
-The relationships are printed in the following format:
+The class definition is indented according to the indentation level
+    of the function in the cflow output.
+The class definition is printed only once for each function.
 
-    function_name --> function_name
+## make\_classes
 
+    my @out = make_classes($relations, $funcs);
+
+The function make\_classes() generates the PlantUML classes
+definitions for all the functions in the cflow output.
+The function takes two arguments:
+
+    a reference to an array of relationships and
+    a reference to a hash of functions.
+
+The function iterates over the relationships and generates the
+PlantUML class definition for each function.
+The function checks if the parent function has been printed
+before generating the class definition for the child function.
+The function returns an array of strings containing the PlantUML.
+
+## make\_relations
+
+    my @out = make_relations($relations);
+
+The function make\_relations() generates the PlantUML
+relationships for all the functions in the cflow output.
+The function takes one argument:
+
+    a reference to an array of relationships.
+
+The function iterates over the relationships and generates the
+PlantUML relationships for each function.
+The function returns an array of strings containing the PlantUML
+relationships.
+The relationships are formatted as follows:
+
+    PARENT_FUNCTION --> CHILD_FUNCTION
+
+The relationships are printed only if the parent function is
+defined.
+The function returns an array of strings containing the PlantUML
+relationships.
+The relationships are formatted according to the PlantUML
+specification.
 The relationships are printed in the order they appear in the
 cflow output.
-The functions are printed to the specified output file or
-standard output. The classes are printed to the specified
-output file or standard output. The classes are printed in
-the order of their relationships.
+The function checks if the parent function is defined before
+generating the relationship.
 
-## print\_func
+## make\_diagram
+    my @out = make\_diagram($relations, $funcs, $title = '');
 
-    print_func($name, $funcs, $out);
+The function make\_diagram() generates the PlantUML diagram
+for the cflow output.
+The function takes three arguments:
 
-Print the function with the specified name in the PlantUML format.
-The function is printed to the specified output file or standard output.
-The function is printed only if it has not been printed before.
-The function is printed in the following format:
+    a reference to an array of relationships,
+    a reference to a hash of functions, and
+    an optional title for the diagram.
 
-    class function_name <<file:line_number>> {
-      arg1
-      arg2
-      ...
-    }
-
-## print\_classes
-
-    print_classes($relations, $funcs, $out);
-
-Print the classes in the PlantUML format.
-The classes are printed to the specified output file or standard
-output.
-The classes are printed in the order of their relationships.
-The classes are printed in the following format:
-
-    class function_name <<file:line_number>> {
-      arg1
-      arg2
-      ...
-    }
-
-## print\_relations
-
-    print_relations($relations, $out);
-
-Print the relationships between the functions in the PlantUML format.
-The relationships are printed to the specified output file or standard
-output. The relationships are printed in the order they appear in the
+The function generates the PlantUML diagram using the
+function make\_classes() and the function make\_relations().
+The function returns an array of strings containing the PlantUML
+diagram.
+The diagram is formatted according to the PlantUML
+specification.
+The diagram includes the title, the class definitions for all
+the functions, and the relationships between the functions.
+The diagram is printed in the order they appear in the
 cflow output.
-
-The relationships are printed in the following format:
-
-    function_name --> function_name
-    ...
-
-# MAIN PROGRAM
-
-The main program reads the cflow output from the specified input file
-or standard input. The cflow output is read line by line and parsed
-to extract the function names, return types, arguments, file names,
-line numbers, and the rest of the line. The function names are stored
-in a hash with the function name as the key and a hash reference
-as the value. The hash reference contains the following keys:
-
-- indent
-
-    The indentation level of the function in the cflow output.
-
-- ret
-
-    The return type of the function.
-
-- args
-
-    An array reference containing the arguments of the function.
-
-- file
-
-    The file where the function is defined.
-
-- line
-
-    The line number where the function is defined.
-
-- rest
-
-    The rest of the line from the cflow output.
-
-- printed
-
-    A flag indicating whether the function has been printed
-    in the PlantUML output.
-
-The relationships are stored in an array of hash references, each
-containing the following keys:
-
-- parent
-
-    The parent function name.
-
-- child
-
-    The child function name.
-
-The relationships are stored in the order they appear in the cflow
-output.
-The script will generate a PlantUML class diagram with the functions
-as classes and the function calls as relationships between them.
-The script will output the PlantUML class diagram to standard output.
-The script uses the following format for the PlantUML class diagram:
+The function checks if the title is defined before generating
+the diagram.
+The function returns an array of strings containing the PlantUML
+diagram.
+The diagram is formatted as follows:
 
     @startuml
+    title TITLE
 
-    class function_name <<file:line_number>> {
-      arg1
-      arg2
-      ...
-    }
+    CLASS_DEFINITIONS
 
-    function_name --> function_name
-    ...
+    RELATIONSHIPS
 
     @enduml
 
-The script will also print the relationships between the functions in
-the format:
+The diagram is printed only once for each function.
 
-    function_name --> function_name
-    ...
+# MAIN PROGRAM
+
+The function checks if the title is defined before generating
+the diagram.
+The function returns an array of strings containing the PlantUML
+diagram.
+The diagram is formatted according to the PlantUML specification.
+The diagram includes the title, the class definitions for all
+the functions, and the relationships between the functions.
+The diagram is printed in the order they appear in the cflow output.
+The function checks if the title is defined before generating
+the diagram.
+The function returns an array of strings containing the PlantUML
+diagram.
+The diagram is formatted as follows:
+
+    @startuml
+    title TITLE
+
+    CLASS_DEFINITIONS
+
+    RELATIONSHIPS
+
+    @enduml
+
+The diagram is printed only once for each function.
+The script uses the Getopt::Std module for command-line option
+parsing and the utf8 module for handling UTF-8 encoding.
+The script is designed to be used with Perl 5.38 or later.
+The script reads the cflow output from the specified input file
+or standard input and generates a PlantUML class diagram.
+The output is written to standard output in the PlantUML format.
 
 # DEPENDENCIES
 
