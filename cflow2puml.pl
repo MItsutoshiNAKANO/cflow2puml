@@ -311,7 +311,7 @@ sub print_func($name, $funcs, $out = *STDOUT) {
         utf8::encode($arg);
         say '  ' . $arg;
     }
-    say "---\n}\n";
+    say "  ---\n}\n";
     ++$funcs->{$name}->{printed};
 }
 
