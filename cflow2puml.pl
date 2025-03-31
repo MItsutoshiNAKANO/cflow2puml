@@ -372,6 +372,7 @@ sub make_relations($relations) {
 }
 
 =head2 make_diagram
+
     my @out = make_diagram($relations, $funcs, $title = '');
 
 The function make_diagram() generates the PlantUML diagram

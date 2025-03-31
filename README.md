@@ -251,7 +251,8 @@ The function checks if the parent function is defined before
 generating the relationship.
 
 ## make\_diagram
-    my @out = make\_diagram($relations, $funcs, $title = '');
+
+    my @out = make_diagram($relations, $funcs, $title = '');
 
 The function make\_diagram() generates the PlantUML diagram
 for the cflow output.
