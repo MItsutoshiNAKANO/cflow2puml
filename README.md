@@ -76,6 +76,10 @@ The script uses the following constants:
 
     The version of the script.
 
+- $Getopt::Std::STANDARD\_HELP\_VERSION = 1
+
+        @see L<Getopt::Std
+
 # SUBROUTINES FOR HELP AND VERSION
 
 The following subroutines are used to print the help message and
@@ -114,58 +118,28 @@ key and a hash reference as the value.
 
 ## load\_cflow
 
-    my ($funcs, $relations) = load_cflow($in);
+    $hash_ref = load_cflow($in);
 
-Load the cflow output from the specified input file or standard input.
-Returns a reference to a hash of functions and a reference to an array
-of relationships between the functions.
+The function load\_cflow() takes one argument: a file handle.
 
-The functions are stored in a hash with the function name as the key
-and a hash reference as the value. The hash reference contains the
-following keys:
+The function returns a hash reference with two keys:
 
-- indent
+- relations
 
-    The indentation level of the function in the cflow output.
+    A reference to an array of relationships.
 
-- ret
+- functions
 
-    The return type of the function.
+    A reference to a hash of functions.
 
-- args
-
-    An array reference containing the arguments of the function.
-
-- file
-
-    The file where the function is defined.
-
-- line
-
-    The line number where the function is defined.
-
-- rest
-
-    The rest of the line from the cflow output.
-
-- printed
-
-    A flag indicating whether the function has been printed
-    in the PlantUML output.
-
-The relationships are stored in an array of hash references, each
-containing the following keys:
-
-- parent
-
-    The parent function name.
-
-- child
-
-    The child function name.
-
-The relationships are stored in the order they appear in the cflow
-output.
+The function reads the cflow output from the specified input file
+or standard input and parses it to extract the function names,
+return types, arguments, file names, line numbers, and the rest of
+the line.
+The function names are stored in a hash with the function name as
+the key and a hash reference as the value.
+The relationships are stored in an array of hash references,
+each containing the parent and child function names.
 
 # SUBROUTINES FOR MAKE OUTPUT FOR PLANTUML
 
@@ -194,7 +168,7 @@ The file name and line number are included in the class definition
 as notes.
 The class definition is formatted as follows:
 
-    class FUNCTION_NAME <<source_file_name:line_number>> {
+    class FUNCTION_NAME <<SOURCE_FILE_NAME:LINE_NUMBER>> {
         ARGUMENTS
         ...
         ---
