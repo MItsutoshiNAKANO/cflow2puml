@@ -1,10 +1,13 @@
 #! /usr/bin/env perl
 
-use v5.38;
-use strict;
-use warnings;
+use Modern::Perl 2025;
 use utf8;
+
+use Readonly;
+use English qw(-no_match_vars);
 use Getopt::Std;
+use Carp       qw(croak);
+use List::Util qw(any);
 
 =encoding utf8
 
@@ -12,16 +15,27 @@ use Getopt::Std;
 
 cflow2puml.pl - Convert cflow output to PlantUML format
 
-=head1 SYNOPSIS
+=head1 USAGE
 
     cflow2puml.pl [OPTIONS] OUTPUT.cflow...
-    Options:
-        -t TITLE
-            Set the title of the PlantUML diagram.
-        --help
-            Show this help message and exit.
-        --version
-            Show the version of the script and exit.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-t> I<TITLE>
+
+Set the title of the PlantUML diagram.
+
+=item B<--help>
+
+Show this help message and exit.
+
+=item B<--version>
+
+Show the version of the script and exit.
+
+=back
 
 =head1 DESCRIPTION
 
@@ -49,24 +63,6 @@ The script generates a PlantUML class diagram using the
 function names, return types, arguments, file names, line numbers,
 and the relationships between the functions.
 
-=head1 OPTIONS
-
-=over
-
-=item B<-t> I<TITLE>
-
-Set the title of the PlantUML diagram.
-
-=item B<--help>
-
-Show this help message and exit.
-
-=item B<--version>
-
-Show the version of the script and exit.
-
-=back
-
 =head1 EXAMPLE
 
     cflow2puml.pl output.cflow > output.puml
@@ -78,30 +74,102 @@ generate a UML class diagram.
 The output can be viewed using the PlantUML tool or any other
 compatible tool.
 
+=head1 DIAGNOSTICS
+
+The script will print error messages to standard error if it
+encounters any issues while reading the input file or writing to
+standard output.
+The script will also print a help message if the user specifies
+the B<--help> option or if the user specifies an invalid option.
+The script will print the version of the script if the user
+specifies the B<--version> option.
+The script will croak if it cannot read the input file or write
+to standard output.
+The script will croak with the following messages:
+
+    cannot print to STDOUT: ERROR_MESSAGE
+
+=head2 EDQUOT
+
+The user's quota of disk blocks on the filesystem
+containing the file referred to by fd has been exhausted.
+
+=head2 EFBIG
+
+An attempt was made to write a file that exceeds the
+implementation-defined maximum file size or the process's
+file size limit, or to write at a position past the maximum
+allowed offset.
+
+=head2 EINTR
+
+The call was interrupted by a signal before any data was written;
+see signal(7).
+
+=head2 EIO
+
+A low-level I/O error occurred while modifying the inode.
+This error may relate to the write-back of data written by
+an earlier write(), which may have been issued to a
+different file descriptor on the same file.  Since Linux
+4.13, errors from write-back come with a promise that they
+may be reported by subsequent.  write() requests, and will
+be reported by a subsequent fsync(2) (whether or not they
+were also reported by write()).  An alternate cause of EIO
+on networked filesystems is when an advisory lock had been
+taken out on the file descriptor and this lock has been
+lost.  See the Lost locks section of fcntl(2) for further
+details.
+
+=head2 ENOSPC
+
+The device containing the file referred to by fd has
+no room for the data.
+
+=head2 EPERM
+
+The operation was prevented by a file seal; see fcntl(2).
+
+=head2 EPIPE
+
+STDOUT is connected to a pipe or socket whose reading end is
+closed.  When this happens the writing process will also
+receive a SIGPIPE signal.  (Thus, the write return value is
+seen only if the program catches, blocks or ignores this
+signal.)
+
+=head1 EXIT STATUS
+
+The script exits with the following status codes:
+
+=over
+
+=item 0) Success
+
+=item 1) Error
+
+=back
+
 =head1 CONSTANTS
 
 The script uses the following constants:
 
-=over
-
-=item HELP
+=head2 C<$HELP>
 
 The help message for the script.
 
-=item $VERSION
+=head2 C<$VERSION>
 
 The version of the script.
 
-=item $Getopt::Std::STANDARD_HELP_VERSION = 1
+=head2 C<$Getopt::Std::STANDARD_HELP_VERSION>
 
-    @see L<Getopt::Std
-
-=back
+see L<Getopt::Std>
 
 =cut
 
-use constant HELP => <<_END_OF_HELP_;
-Usage: $0 [OPTIONS] [FILE1.cflow FILE2.cflow ...]
+Readonly my $HELP => <<"_END_OF_HELP_";
+Usage: $PROGRAM_NAME [OPTIONS] [FILE1.cflow FILE2.cflow ...]
 Options:
     -t TITLE
         Set the title of the PlantUML diagram.
@@ -111,7 +179,7 @@ Options:
         Show the version of the script and exit.
 _END_OF_HELP_
 
-my $VERSION = '0.2.0-SNAPSHOT';
+Readonly our $VERSION => '0.3.0-SNAPSHOT';
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 =head1 SUBROUTINES FOR HELP AND VERSION
@@ -121,29 +189,29 @@ the version of the script.
 The subroutine HELP_MESSAGE prints the help message and the
 subroutine VERSION_MESSAGE prints the version of the script.
 The subroutine HELP_MESSAGE is called when the user
-specifies the --help option
+specifies the B<--help> option
 or when the user specifies an invalid option.
 The subroutine VERSION_MESSAGE is called when the user
-specifies the --version option.
+specifies the B<--version> option.
 
 =head2 HELP_MESSAGE
 
 The following subroutine is used to print the help message and
 the version of the script.
 The subroutine HELP_MESSAGE is called when the user
-specifies the --help option
+specifies the B<--help> option
 or when the user specifies an invalid option.
 
 =head2 VERSION_MESSAGE
 
 The following subroutine is used to print the version of the script.
 The subroutine VERSION_MESSAGE is called when the user
-specifies the --version option.
+specifies the B<--version> option.
 
 =cut
 
-sub HELP_MESSAGE { print HELP }
-sub VERSION_MESSAGE { say $VERSION }
+sub HELP_MESSAGE    { return print $HELP }
+sub VERSION_MESSAGE { return say $VERSION }
 
 =head1 SUBROUTINE FOR LOADING CFLOW OUTPUT
 
@@ -186,32 +254,41 @@ each containing the parent and child function names.
 
 =cut
 
-sub load_cflow($in = *ARGV) {
-    my (%funcs, @relations, @stack);
+sub load_cflow( $in = *ARGV ) {
+    my ( %functions, @relations, @stack );
     while (<$in>) {
         utf8::decode($_);
         chomp;
         chomp;
-        if (/^( *)(\w+)\(\) <(.*) (\w+) \((.*)\) at (.*):(\d+)>(.*)$/) {
-            my ($indent, $func, $ret, $func2, $args, $file, $line, $rest) = (
-                length($1) / 4, $2, $3, $4, $5, $6, $7, $8
-            );
-            my @args_list = split /, /, $args;
-            $funcs{$func} = {
-                indent => $indent, ret => $ret, args => \@args_list,
-                file => $file, line => $line, rest => $rest, printed => 0
+        Readonly my $INDENT      => q{(?<indent>\s*)};
+        Readonly my $FUNC        => q{(?<func>\w+)\(\)};
+        Readonly my $DECLARATION => q{(?<ret>.*)\s(\w+)\s\((?<args>.*)\)};
+        Readonly my $LOCATION    => q{(?<file>.*):(?<line>\d+)};
+        if (m{\A$INDENT $FUNC \s <$DECLARATION \s at \s $LOCATION>}xms) {
+            Readonly my $INDENT_SIZE => 4;
+            my $depth = length( $LAST_PAREN_MATCH{indent} ) / $INDENT_SIZE;
+            my @arguments = split m{,\s}xms, $LAST_PAREN_MATCH{args};
+            my $func      = $LAST_PAREN_MATCH{func};
+            $functions{$func} = {
+                indent  => $depth,
+                ret     => $LAST_PAREN_MATCH{ret},
+                args    => \@arguments,
+                file    => $LAST_PAREN_MATCH{file},
+                line    => $LAST_PAREN_MATCH{line},
+                printed => 0
             };
-            if ($indent < @stack) { @stack = @stack[0 .. $indent - 1] }
-            $stack[$indent] = $func;
-            my $parent = $indent ? $stack[$indent - 1] : '';
-            unless (
-                grep {
-                    $_->{parent} eq $parent and $_->{child} eq $func
-                } @relations
-            ) { push @relations, { parent => $parent, child => $func } }
+            if ( $depth < @stack ) { @stack = @stack[ 0 .. $depth - 1 ] }
+            $stack[$depth] = $func;
+            my $parent = $depth ? $stack[ $depth - 1 ] : q{};
+
+            if ( not any { $_->{parent} eq $parent and $_->{child} eq $func }
+                @relations )
+            {
+                push @relations, { parent => $parent, child => $func };
+            }
         }
     }
-    return { relations => \@relations, functions => \%funcs };
+    return { relations => \@relations, functions => \%functions };
 }
 ################################################################
 
@@ -224,7 +301,7 @@ for a function.
 
 =head2 make_func
 
-    my @out = make_func($name, $funcs);
+    my @out = make_func($name, $functions);
 
 Generates the PlantUML class definition for a function.
 The function name is passed as the first argument and the hash of
@@ -254,22 +331,21 @@ The class definition is printed only once for each function.
 
 =cut
 
-sub make_func($name, $funcs) {
-    my $func = $funcs->{$name};
-    my ($file, $line, $arguments) = (
-        $func->{file}, $func->{line}, $func->{args}
-    );
-    ++$funcs->{$name}->{printed};
-    my @out = ('class ', $name, ' <<', $file, ':', $line , '>> {', "\n");
-    foreach my $arg (@$arguments) { push @out, '  ', $arg, "\n" }
+sub make_func( $name, $functions ) {
+    my $func = $functions->{$name};
+    my ( $file, $line, $arguments )
+        = ( $func->{file}, $func->{line}, $func->{args} );
+    ++$functions->{$name}->{printed};
+    my @out = ( 'class ', $name, q{ <<}, $file, q{:}, $line, '>> {', "\n" );
+    foreach my $arg ( @{$arguments} ) { push @out, q{  }, $arg, "\n" }
     push @out, "  ---\n}\n\n";
-    @out;
+    return @out;
 }
 ########################################
 
 =head2 make_classes
 
-    my @out = make_classes($relations, $funcs);
+    my @out = make_classes($relations, $functions);
 
 The function make_classes() generates the PlantUML classes
 definitions for all the functions in the cflow output.
@@ -286,18 +362,18 @@ The function returns an array of strings containing the PlantUML.
 
 =cut
 
-sub make_classes($relations, $funcs) {
+sub make_classes( $relations, $functions ) {
     my @out;
-    foreach my $relation (@$relations) {
-        my ($parent, $child) = ($relation->{parent}, $relation->{child});
-        if ($parent and not $funcs->{$parent}->{printed}) {
-            push @out, make_func($parent, $funcs);
+    foreach my $relation ( @{$relations} ) {
+        my ( $parent, $child ) = ( $relation->{parent}, $relation->{child} );
+        if ( $parent and not $functions->{$parent}->{printed} ) {
+            push @out, make_func( $parent, $functions );
         }
-        unless ($funcs->{$child}->{printed}) {
-            push @out, make_func($child, $funcs);
+        if ( not $functions->{$child}->{printed} ) {
+            push @out, make_func( $child, $functions );
         }
     }
-    @out;
+    return @out;
 }
 ########################################
 
@@ -334,16 +410,16 @@ generating the relationship.
 
 sub make_relations($relations) {
     my @out;
-    foreach my $relation (@$relations) {
-        my ($parent, $child) = ($relation->{parent}, $relation->{child});
-        push @out, $parent, ' --> ', $child, "\n" if $parent;
+    foreach my $relation ( @{$relations} ) {
+        my ( $parent, $child ) = ( $relation->{parent}, $relation->{child} );
+        if ($parent) { push @out, $parent, ' --> ', $child, "\n" }
     }
-    @out;
+    return @out;
 }
 
 =head2 make_diagram
 
-    my @out = make_diagram($relations, $funcs, $title = '');
+    my @out = make_diagram($relations, $functions, $title = '');
 
 The function make_diagram() generates the PlantUML diagram
 for the cflow output.
@@ -382,14 +458,14 @@ The diagram is printed only once for each function.
 
 =cut
 
-sub make_diagram($relations, $funcs, $title = '') {
-    my @out = ('@startuml', "\n");
-    push @out, 'title ', $title, "\n" if $title;
+sub make_diagram( $relations, $functions, $title = q{} ) {
+    my @out = ( '@startuml', "\n" );
+    if ($title) { push @out, 'title ', $title }
     push @out, "\n";
-    push @out, make_classes($relations, $funcs);
+    push @out, make_classes( $relations, $functions );
     push @out, make_relations($relations);
     push @out, "\n", '@enduml', "\n";
-    @out;
+    return @out;
 }
 ################################################################
 
@@ -428,49 +504,64 @@ The output is written to standard output in the PlantUML format.
 
 =cut
 
-getopts('t:', \my %opts) or die HELP;
-my $hash_ref = load_cflow();
-my $out = join '', make_diagram(
-    $hash_ref->{relations}, $hash_ref->{functions}, $opts{t}
-);
+getopts( 't:', \my %opts ) or croak $HELP;
+my $hash_ref = load_cflow;
+my $out      = join q{},
+    make_diagram( $hash_ref->{relations}, $hash_ref->{functions}, $opts{t} );
 utf8::encode($out);
-print $out;
+print $out or croak 'cannot print to STDOUT:' . $OS_ERROR;
 
 __END__
 
 =head1 DEPENDENCIES
 
-This script requires Perl 5.38 or later and the following modules:
+This script requires L<Modern::Perl> 2025,
+L<Getopt::Std>, L<strict>, L<warnings>, and L<utf8>.
+It also requires L<Readonly>, L<English>, L<Carp>, and L<List::Util>.
 
-=over
+=head2 L<Modern::Perl>
 
-=item L<Getopt::Std>
+For modern Perl features.
 
-For command-line option parsing
+=head2 L<Getopt::Std>
 
-=item L<v5.38>
+For command-line option parsing.
 
-For modern Perl features
+=head2 L<strict>
 
-=item L<strict>
+For strict variable declaration.
 
-For strict variable declaration
+=head2 L<warnings>
 
-=item L<warnings>
+For warning messages.
 
-For warning messages
+=head2 L<utf8>
 
-=item L<utf8>
+For handling UTF-8 encoding.
 
-For handling UTF-8 encoding
+=head2 L<Readonly>
 
-=back
+For defining read-only variables.
 
-=head1 COPYRIGHT
+=head2 L<English>
 
-2025 by Mitsutoshi Nakano <ItSANgo@gmail.com>
+For more readable variable names.
 
-=head1 LICENSE
+=head2 L<Carp>
+
+For error handling.
+
+=head2 L<List::Util>
+
+For utility function C<any>.
+
+=head1 AUTHOR
+
+Mitsutoshi Nakano <ItSANgo@gmail.com>
+
+=head1 LICENSE AND COPYRIGHT
+
+2025 Mitsutoshi Nakano <ItSANgo@gmail.com>
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -512,6 +603,22 @@ For more information on warnings.
 =item L<https://metacpan.org/pod/utf8>
 
 For more information on utf8 encoding.
+
+=item L<https://metacpan.org/pod/Readonly>
+
+For defining read-only variables.
+
+=item L<https://metacpan.org/pod/English>
+
+For more readable variable names.
+
+=item L<https://metacpan.org/pod/Carp>
+
+For error handling.
+
+=item L<https://metacpan.org/pod/List::Util>
+
+For utility function C<any>.
 
 =item L<https://perldoc.perl.org/perlintro>
 
