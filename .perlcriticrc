@@ -1,0 +1,37 @@
+severity = 2
+[Documentation::RequirePodSections]
+severity = 1
+[BuiltinFunctions::ProhibitReverseSortBlock]
+severity = 2
+[CodeLayout::ProhibitParensWithBuiltins]
+severity = 2
+[CodeLayout::ProhibitTrailingWhitespace]
+severity = 2
+[CodeLayout::RequireTidyCode]
+severity = 2
+[CodeLayout::RequireTrailingCommas]
+severity = 2
+[Documentation::RequirePackageMatchesPodName]
+severity = 2
+[Documentation::RequirePodAtEnd]
+severity = 1
+[InputOutput::RequireBracedFileHandleWithPrint]
+severity = 2
+[InputOutput::RequireCheckedSyscalls]
+severity = 2
+[NamingConventions::Capitalization]
+severity = 2
+[RegularExpressions::ProhibitEnumeratedClasses]
+severity = 2
+[RegularExpressions::ProhibitEscapedMetacharacters]
+severity = 2
+[RegularExpressions::ProhibitSingleCharAlternation]
+severity = 2
+[RegularExpressions::ProhibitUnusualDelimiters]
+severity = 2
+[RegularExpressions::RequireBracesForMultiline]
+severity = 2
+[ValuesAndExpressions::ProhibitInterpolationOfLiterals]
+severity = 2
+[ValuesAndExpressions::RequireInterpolationOfMetachars]
+severity = 1
