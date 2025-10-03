@@ -1,9 +1,10 @@
 #! /usr/bin/env perl
 
-use Modern::Perl 2025;
+use 5.026003;
+use strict;
+use warnings;
 use utf8;
 
-use Readonly;
 use English qw(-no_match_vars);
 use Getopt::Std;
 use Carp       qw(croak);
@@ -146,7 +147,7 @@ The script exits with the following status codes:
 
 =item 0) Success
 
-=item 1) Error
+=item 1) Failure
 
 =back
 
@@ -154,7 +155,7 @@ The script exits with the following status codes:
 
 The script uses the following constants:
 
-=head2 C<$HELP>
+=head2 C<HELP>
 
 The help message for the script.
 
@@ -168,7 +169,7 @@ see L<Getopt::Std>
 
 =cut
 
-Readonly my $HELP => <<"_END_OF_HELP_";
+use constant HELP => <<"_END_OF_HELP_";
 Usage: $PROGRAM_NAME [OPTIONS] [FILE1.cflow FILE2.cflow ...]
 Options:
     -t TITLE
@@ -179,7 +180,7 @@ Options:
         Show the version of the script and exit.
 _END_OF_HELP_
 
-Readonly our $VERSION => '0.3.0-SNAPSHOT';
+our $VERSION => '0.3.0-SNAPSHOT';
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 =head1 SUBROUTINES FOR HELP AND VERSION
@@ -210,7 +211,7 @@ specifies the B<--version> option.
 
 =cut
 
-sub HELP_MESSAGE    { return print $HELP }
+sub HELP_MESSAGE    { return print HELP }
 sub VERSION_MESSAGE { return say $VERSION }
 
 =head1 SUBROUTINE FOR LOADING CFLOW OUTPUT
@@ -254,19 +255,21 @@ each containing the parent and child function names.
 
 =cut
 
-sub load_cflow( $in = *ARGV ) {
+sub load_cflow {
+    my $in = shift // *ARGV;
+
     my ( %functions, @relations, @stack );
     while (<$in>) {
         utf8::decode($_);
         chomp;
         chomp;
-        Readonly my $INDENT      => q{(?<indent>\s*)};
-        Readonly my $FUNC        => q{(?<func>\w+)\(\)};
-        Readonly my $DECLARATION => q{(?<ret>.*)\s(\w+)\s\((?<args>.*)\)};
-        Readonly my $LOCATION    => q{(?<file>.*):(?<line>\d+)};
-        if (m{\A$INDENT $FUNC \s <$DECLARATION \s at \s $LOCATION>}xms) {
-            Readonly my $INDENT_SIZE => 4;
-            my $depth = length( $LAST_PAREN_MATCH{indent} ) / $INDENT_SIZE;
+        my $INDENT      = q{(?<indent>\s*)};
+        my $FUNC        = q{(?<func>\w+)\(\)};
+        my $DECLARATION = q{(?<ret>.*)\s(\w+)\s\((?<args>.*)\)};
+        my $LOCATION    = q{(?<file>.*):(?<line>\d+)};
+        if (m{\A $INDENT $FUNC \s $DECLARATION \s at \s $LOCATION}xms) {
+            use constant INDENT_SIZE => 4;
+            my $depth     = length( $LAST_PAREN_MATCH{indent} ) / INDENT_SIZE;
             my @arguments = split m{,\s}xms, $LAST_PAREN_MATCH{args};
             my $func      = $LAST_PAREN_MATCH{func};
             $functions{$func} = {
@@ -331,7 +334,9 @@ The class definition is printed only once for each function.
 
 =cut
 
-sub make_func( $name, $functions ) {
+sub make_func {
+    my ( $name, $functions ) = @_;
+
     my $func = $functions->{$name};
     my ( $file, $line, $arguments )
         = ( $func->{file}, $func->{line}, $func->{args} );
@@ -362,7 +367,8 @@ The function returns an array of strings containing the PlantUML.
 
 =cut
 
-sub make_classes( $relations, $functions ) {
+sub make_classes {
+    my ( $relations, $functions ) = @_;
     my @out;
     foreach my $relation ( @{$relations} ) {
         my ( $parent, $child ) = ( $relation->{parent}, $relation->{child} );
@@ -408,7 +414,9 @@ generating the relationship.
 
 =cut
 
-sub make_relations($relations) {
+sub make_relations {
+    my $relations = shift;
+
     my @out;
     foreach my $relation ( @{$relations} ) {
         my ( $parent, $child ) = ( $relation->{parent}, $relation->{child} );
@@ -458,13 +466,16 @@ The diagram is printed only once for each function.
 
 =cut
 
-sub make_diagram( $relations, $functions, $title = q{} ) {
-    my @out = ( '@startuml', "\n" );
+sub make_diagram {
+    my ( $relations, $functions, $title ) = @_;
+    $title //= q{};
+
+    my @out = ("\@startuml\n");
     if ($title) { push @out, 'title ', $title }
     push @out, "\n";
     push @out, make_classes( $relations, $functions );
     push @out, make_relations($relations);
-    push @out, "\n", '@enduml', "\n";
+    push @out, "\n\@enduml\n";
     return @out;
 }
 ################################################################
@@ -504,12 +515,12 @@ The output is written to standard output in the PlantUML format.
 
 =cut
 
-getopts( 't:', \my %opts ) or croak $HELP;
+getopts( 't:', \my %opts ) or croak HELP;
 my $hash_ref = load_cflow;
 my $out      = join q{},
     make_diagram( $hash_ref->{relations}, $hash_ref->{functions}, $opts{t} );
 utf8::encode($out);
-print $out or croak 'cannot print to STDOUT:' . $OS_ERROR;
+print $out or croak 'cannot print to STDOUT: ' . $OS_ERROR;
 
 __END__
 
