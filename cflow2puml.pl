@@ -147,7 +147,7 @@ The script exits with the following status codes:
 
 =item 0) Success
 
-=item 1) Failure
+=item Others: Failure
 
 =back
 
@@ -178,9 +178,14 @@ Options:
         Show this help message and exit.
     --version
         Show the version of the script and exit.
+
+For more detailed information, try:
+
+    perldoc -F $PROGRAM_NAME
+
 _END_OF_HELP_
 
-our $VERSION => '0.3.0-SNAPSHOT';
+our $VERSION = '0.3.0-SNAPSHOT';
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 =head1 SUBROUTINES FOR HELP AND VERSION
@@ -284,7 +289,7 @@ sub load_cflow {
             $stack[$depth] = $func;
             my $parent = $depth ? $stack[ $depth - 1 ] : q{};
 
-            if ( not any { $_->{parent} eq $parent and $_->{child} eq $func }
+            if ( !any { $_->{parent} eq $parent && $_->{child} eq $func }
                 @relations )
             {
                 push @relations, { parent => $parent, child => $func };
@@ -369,13 +374,14 @@ The function returns an array of strings containing the PlantUML.
 
 sub make_classes {
     my ( $relations, $functions ) = @_;
+
     my @out;
     foreach my $relation ( @{$relations} ) {
         my ( $parent, $child ) = ( $relation->{parent}, $relation->{child} );
-        if ( $parent and not $functions->{$parent}->{printed} ) {
+        if ( $parent && !$functions->{$parent}->{printed} ) {
             push @out, make_func( $parent, $functions );
         }
-        if ( not $functions->{$child}->{printed} ) {
+        if ( !$functions->{$child}->{printed} ) {
             push @out, make_func( $child, $functions );
         }
     }
@@ -526,13 +532,8 @@ __END__
 
 =head1 DEPENDENCIES
 
-This script requires L<Modern::Perl> 2025,
-L<Getopt::Std>, L<strict>, L<warnings>, and L<utf8>.
+This script requires L<Getopt::Std>, L<strict>, L<warnings>, and L<utf8>.
 It also requires L<Readonly>, L<English>, L<Carp>, and L<List::Util>.
-
-=head2 L<Modern::Perl>
-
-For modern Perl features.
 
 =head2 L<Getopt::Std>
 
