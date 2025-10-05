@@ -2,16 +2,23 @@
 
 cflow2puml.pl - Convert cflow output to PlantUML format
 
-# SYNOPSIS
+# USAGE
 
     cflow2puml.pl [OPTIONS] OUTPUT.cflow...
-    Options:
-        -t TITLE
-            Set the title of the PlantUML diagram.
-        --help
-            Show this help message and exit.
-        --version
-            Show the version of the script and exit.
+
+# OPTIONS
+
+- **-t** _TITLE_
+
+    Set the title of the PlantUML diagram.
+
+- **--help**
+
+    Show this help message and exit.
+
+- **--version**
+
+    Show the version of the script and exit.
 
 # DESCRIPTION
 
@@ -39,20 +46,6 @@ The script generates a PlantUML class diagram using the
 function names, return types, arguments, file names, line numbers,
 and the relationships between the functions.
 
-# OPTIONS
-
-- **-t** _TITLE_
-
-    Set the title of the PlantUML diagram.
-
-- **--help**
-
-    Show this help message and exit.
-
-- **--version**
-
-    Show the version of the script and exit.
-
 # EXAMPLE
 
     cflow2puml.pl output.cflow > output.puml
@@ -64,21 +57,92 @@ generate a UML class diagram.
 The output can be viewed using the PlantUML tool or any other
 compatible tool.
 
+# DIAGNOSTICS
+
+The script will print error messages to standard error if it
+encounters any issues while reading the input file or writing to
+standard output.
+The script will also print a help message if the user specifies
+the **--help** option or if the user specifies an invalid option.
+The script will print the version of the script if the user
+specifies the **--version** option.
+The script will croak if it cannot read the input file or write
+to standard output.
+The script will croak with the following messages:
+
+    cannot print to STDOUT: ERROR_MESSAGE
+
+## EDQUOT
+
+The user's quota of disk blocks on the filesystem
+containing the file referred to by fd has been exhausted.
+
+## EFBIG
+
+An attempt was made to write a file that exceeds the
+implementation-defined maximum file size or the process's
+file size limit, or to write at a position past the maximum
+allowed offset.
+
+## EINTR
+
+The call was interrupted by a signal before any data was written;
+see signal(7).
+
+## EIO
+
+A low-level I/O error occurred while modifying the inode.
+This error may relate to the write-back of data written by
+an earlier write(), which may have been issued to a
+different file descriptor on the same file.  Since Linux
+4.13, errors from write-back come with a promise that they
+may be reported by subsequent.  write() requests, and will
+be reported by a subsequent fsync(2) (whether or not they
+were also reported by write()).  An alternate cause of EIO
+on networked filesystems is when an advisory lock had been
+taken out on the file descriptor and this lock has been
+lost.  See the Lost locks section of fcntl(2) for further
+details.
+
+## ENOSPC
+
+The device containing the file referred to by fd has
+no room for the data.
+
+## EPERM
+
+The operation was prevented by a file seal; see fcntl(2).
+
+## EPIPE
+
+STDOUT is connected to a pipe or socket whose reading end is
+closed.  When this happens the writing process will also
+receive a SIGPIPE signal.  (Thus, the write return value is
+seen only if the program catches, blocks or ignores this
+signal.)
+
+# EXIT STATUS
+
+The script exits with the following status codes:
+
+- 0) Success
+- Others: Failure
+
 # CONSTANTS
 
 The script uses the following constants:
 
-- HELP
+## `HELP`
 
-    The help message for the script.
+The help message for the script.
 
-- $VERSION
+## `$VERSION`
 
-    The version of the script.
+The version of the script.
 
-- $Getopt::Std::STANDARD\_HELP\_VERSION = 1
+## `$Getopt::Std::STANDARD_HELP_VERSION`
 
-        @see L<Getopt::Std
+see [Getopt::Std](https://metacpan.org/pod/Getopt%3A%3AStd)
 
 # SUBROUTINES FOR HELP AND VERSION
 
@@ -87,24 +151,24 @@ the version of the script.
 The subroutine HELP\_MESSAGE prints the help message and the
 subroutine VERSION\_MESSAGE prints the version of the script.
 The subroutine HELP\_MESSAGE is called when the user
-specifies the --help option
+specifies the **--help** option
 or when the user specifies an invalid option.
 The subroutine VERSION\_MESSAGE is called when the user
-specifies the --version option.
+specifies the **--version** option.
 
 ## HELP\_MESSAGE
 
 The following subroutine is used to print the help message and
 the version of the script.
 The subroutine HELP\_MESSAGE is called when the user
-specifies the --help option
+specifies the **--help** option
 or when the user specifies an invalid option.
 
 ## VERSION\_MESSAGE
 
 The following subroutine is used to print the version of the script.
 The subroutine VERSION\_MESSAGE is called when the user
-specifies the --version option.
+specifies the **--version** option.
 
 # SUBROUTINE FOR LOADING CFLOW OUTPUT
 
@@ -150,7 +214,7 @@ for a function.
 
 ## make\_func
 
-    my @out = make_func($name, $funcs);
+    my @out = make_func($name, $functions);
 
 Generates the PlantUML class definition for a function.
 The function name is passed as the first argument and the hash of
@@ -180,7 +244,7 @@ The class definition is printed only once for each function.
 
 ## make\_classes
 
-    my @out = make_classes($relations, $funcs);
+    my @out = make_classes($relations, $functions);
 
 The function make\_classes() generates the PlantUML classes
 definitions for all the functions in the cflow output.
@@ -226,7 +290,7 @@ generating the relationship.
 
 ## make\_diagram
 
-    my @out = make_diagram($relations, $funcs, $title = '');
+    my @out = make_diagram($relations, $functions, $title = '');
 
 The function make\_diagram() generates the PlantUML diagram
 for the cflow output.
@@ -298,33 +362,48 @@ The output is written to standard output in the PlantUML format.
 
 # DEPENDENCIES
 
-This script requires Perl 5.38 or later and the following modules:
+This script requires [Getopt::Std](https://metacpan.org/pod/Getopt%3A%3AStd), [strict](https://metacpan.org/pod/strict), [warnings](https://metacpan.org/pod/warnings), and [utf8](https://metacpan.org/pod/utf8).
+It also requires [Readonly](https://metacpan.org/pod/Readonly), [English](https://metacpan.org/pod/English), [Carp](https://metacpan.org/pod/Carp), and [List::Util](https://metacpan.org/pod/List%3A%3AUtil).
 
-- [Getopt::Std](https://metacpan.org/pod/Getopt%3A%3AStd)
+## [Getopt::Std](https://metacpan.org/pod/Getopt%3A%3AStd)
 
-    For command-line option parsing
+For command-line option parsing.
 
-- [v5.38](https://metacpan.org/pod/v5.38)
+## [strict](https://metacpan.org/pod/strict)
 
-    For modern Perl features
+For strict variable declaration.
 
-- [strict](https://metacpan.org/pod/strict)
+## [warnings](https://metacpan.org/pod/warnings)
 
-    For strict variable declaration
+For warning messages.
 
-- [warnings](https://metacpan.org/pod/warnings)
+## [utf8](https://metacpan.org/pod/utf8)
 
-    For warning messages
+For handling UTF-8 encoding.
 
-- [utf8](https://metacpan.org/pod/utf8)
+## [Readonly](https://metacpan.org/pod/Readonly)
 
-    For handling UTF-8 encoding
+For defining read-only variables.
 
-# COPYRIGHT
+## [English](https://metacpan.org/pod/English)
 
-2025 by Mitsutoshi Nakano <ItSANgo@gmail.com>
+For more readable variable names.
 
-# LICENSE
+## [Carp](https://metacpan.org/pod/Carp)
+
+For error handling.
+
+## [List::Util](https://metacpan.org/pod/List%3A%3AUtil)
+
+For utility function `any`.
+
+# AUTHOR
+
+Mitsutoshi Nakano <ItSANgo@gmail.com>
+
+# LICENSE AND COPYRIGHT
+
+2025 Mitsutoshi Nakano <ItSANgo@gmail.com>
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -364,6 +443,22 @@ limitations under the License.
 - [https://metacpan.org/pod/utf8](https://metacpan.org/pod/utf8)
 
     For more information on utf8 encoding.
+
+- [https://metacpan.org/pod/Readonly](https://metacpan.org/pod/Readonly)
+
+    For defining read-only variables.
+
+- [https://metacpan.org/pod/English](https://metacpan.org/pod/English)
+
+    For more readable variable names.
+
+- [https://metacpan.org/pod/Carp](https://metacpan.org/pod/Carp)
+
+    For error handling.
+
+- [https://metacpan.org/pod/List::Util](https://metacpan.org/pod/List::Util)
+
+    For utility function `any`.
 
 - [https://perldoc.perl.org/perlintro](https://perldoc.perl.org/perlintro)
 
