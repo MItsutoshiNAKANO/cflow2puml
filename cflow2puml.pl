@@ -49,7 +49,7 @@ The output is written to standard output in the PlantUML format.
 
 The script uses the Getopt::Std module for command-line option
 parsing and the utf8 module for handling UTF-8 encoding.
-The script is designed to be used with Perl 5.38 or later.
+The script is designed to be used with Perl 5.26.3 or later.
 
 The script reads the cflow output line by line and parses it to
 extract the function names, return types, arguments, file names,
@@ -167,6 +167,34 @@ The version of the script.
 
 see L<Getopt::Std>
 
+=head2 C<INDENT>
+
+A regex pattern to match the indentation of a line.
+
+=head2 C<FUNC>
+
+A regex pattern to match the function name.
+
+=head2 C<DECL>
+
+A regex pattern to match the function declaration.
+
+=head2 C<LOCATION>
+
+A regex pattern to match the file name and line number.
+
+=head2 C<INDENT_SIZE>
+
+The number of spaces used for indentation.
+
+=head2 C<$PATTERN>
+
+A regex pattern to match a line in the cflow output.
+
+=head2 C<$COMPILED_PATTERN>
+
+The compiled regex pattern to match a line in the cflow output.
+
 =cut
 
 use constant HELP => <<"_END_OF_HELP_";
@@ -188,7 +216,17 @@ _END_OF_HELP_
 our $VERSION = '0.3.0-SNAPSHOT';
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
-=head1 SUBROUTINES FOR HELP AND VERSION
+use constant {
+    INDENT      => q{\A(?<indent>\s*)},
+    FUNC        => q{(?<func>\w+)\(\)},
+    DECL        => q{(?<ret>.*)\s(\w+)\s\((?<args>.*)\)},
+    LOCATION    => q{(?<file>.*):(?<line>\d+)},
+    INDENT_SIZE => 4
+};
+my $PATTERN          = INDENT . FUNC . '\s' . DECL . '\s at \s' . LOCATION;
+my $COMPILED_PATTERN = qr{$PATTERN}xms;
+
+=head1 SUBROUTINES
 
 The following subroutines are used to print the help message and
 the version of the script.
@@ -208,6 +246,11 @@ The subroutine HELP_MESSAGE is called when the user
 specifies the B<--help> option
 or when the user specifies an invalid option.
 
+=cut
+
+sub HELP_MESSAGE { return print HELP }
+################################################################
+
 =head2 VERSION_MESSAGE
 
 The following subroutine is used to print the version of the script.
@@ -216,18 +259,8 @@ specifies the B<--version> option.
 
 =cut
 
-sub HELP_MESSAGE    { return print HELP }
 sub VERSION_MESSAGE { return say $VERSION }
-
-=head1 SUBROUTINE FOR LOADING CFLOW OUTPUT
-
-The following subroutine is used to load the cflow output from the
-specified input file or standard input.
-The cflow output is read line by line and parsed to extract the
-function names, return types, arguments, file names, line numbers,
-and the rest of the line.
-The function names are stored in a hash with the function name as the
-key and a hash reference as the value.
+################################################################
 
 =head2 load_cflow
 
@@ -268,12 +301,8 @@ sub load_cflow {
         utf8::decode($_);
         chomp;
         chomp;
-        my $INDENT      = q{(?<indent>\s*)};
-        my $FUNC        = q{(?<func>\w+)\(\)};
-        my $DECLARATION = q{(?<ret>.*)\s(\w+)\s\((?<args>.*)\)};
-        my $LOCATION    = q{(?<file>.*):(?<line>\d+)};
-        if (m{\A $INDENT $FUNC \s $DECLARATION \s at \s $LOCATION}xms) {
-            use constant INDENT_SIZE => 4;
+
+        if (m{$COMPILED_PATTERN}xms) {
             my $depth     = length( $LAST_PAREN_MATCH{indent} ) / INDENT_SIZE;
             my @arguments = split m{,\s}xms, $LAST_PAREN_MATCH{args};
             my $func      = $LAST_PAREN_MATCH{func};
@@ -299,13 +328,6 @@ sub load_cflow {
     return { relations => \@relations, functions => \%functions };
 }
 ################################################################
-
-=head1 SUBROUTINES FOR MAKE OUTPUT FOR PLANTUML
-
-The following subroutines are used to generate the PlantUML output
-from the cflow output.
-The subroutine make_func generates the PlantUML class definition
-for a function.
 
 =head2 make_func
 
@@ -351,7 +373,7 @@ sub make_func {
     push @out, "  ---\n}\n\n";
     return @out;
 }
-########################################
+################################################################
 
 =head2 make_classes
 
@@ -387,7 +409,7 @@ sub make_classes {
     }
     return @out;
 }
-########################################
+################################################################
 
 =head2 make_relations
 
@@ -430,6 +452,7 @@ sub make_relations {
     }
     return @out;
 }
+################################################################
 
 =head2 make_diagram
 
